@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -66,16 +65,13 @@ public class AccountService implements UserDetailsService {
             throw new AccountExistsException(username);
         }
         final Account currentAccount = findAccount(id);
-        String token = "";
-        if (!Objects.equals(currentAccount.getUsername(), username)) {
-            token = jwtProvider.generateToken(currentAccount.getUsername());
-        }
         currentAccount.setUsername(username);
         currentAccount.setPassword(passwordEncoder.encode(password));
         currentAccount.setAdmin(isAdmin);
         currentAccount.setBalance(balance);
         validatorUtil.validate(currentAccount);
-        return Pair.of(accountRepository.save(currentAccount), token);
+        return Pair.of(accountRepository.save(currentAccount),
+                jwtProvider.generateToken(currentAccount.getUsername()));
     }
 
     public Account updateBalance(Account account, double count, char operation) {

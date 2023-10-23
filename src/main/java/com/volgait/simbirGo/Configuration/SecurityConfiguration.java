@@ -54,6 +54,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(requests -> {
                     requests.requestMatchers(HttpMethod.POST, OpenAPI30Configuration.API_PREFIX + "/Account/SignIn").permitAll();
                     requests.requestMatchers(HttpMethod.POST, OpenAPI30Configuration.API_PREFIX + "/Account/SignUp").permitAll();
+                    requests.requestMatchers(HttpMethod.GET, OpenAPI30Configuration.API_PREFIX + "/Transport/{id}").permitAll();
                     requests.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/swagger-resources/**", "/swagger-resources", "/v3/api-docs/**", "/proxy/**").permitAll();
                     requests.requestMatchers(OpenAPI30Configuration.API_PREFIX + "/Admin/**").hasRole("ADMIN");
                     requests.anyRequest().authenticated();
