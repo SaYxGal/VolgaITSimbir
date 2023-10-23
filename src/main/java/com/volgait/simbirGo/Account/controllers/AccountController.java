@@ -52,6 +52,9 @@ public class AccountController {
     public String update(@RequestBody AccountUpdateDto updateInfo) {
         try {
             Pair<Account, String> info = accountService.updateAccount(updateInfo.getUsername(), updateInfo.getPassword());
+            if (info.getSecond().equals("")) {
+                return info.getFirst().getUsername() + " was updated.";
+            }
             return info.getFirst().getUsername() + " was updated.\nNew token - " + info.getSecond();
         } catch (ValidationException | AccountExistsException e) {
             return e.getMessage();
@@ -60,7 +63,7 @@ public class AccountController {
 
     @PostMapping("/SignOut")
     public String logout() {
-        //To do
+        //TODO
         return "";
     }
 }

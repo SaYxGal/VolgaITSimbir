@@ -58,6 +58,9 @@ public class AdminAccountController {
         try {
             Pair<Account, String> info = accountService.updateAccount(id, updateInfo.getUsername(),
                     updateInfo.getPassword(), updateInfo.isAdmin(), updateInfo.getBalance());
+            if (info.getSecond().equals("")) {
+                return info.getFirst().getUsername() + " was updated.";
+            }
             return info.getFirst().getUsername() + " was updated.\nNew token - " + info.getSecond();
         } catch (ValidationException | AccountExistsException e) {
             return e.getMessage();
