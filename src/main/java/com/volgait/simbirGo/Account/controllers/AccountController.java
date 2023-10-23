@@ -1,11 +1,14 @@
 package com.volgait.simbirGo.Account.controllers;
 
-import com.volgait.simbirGo.Account.DTO.AccountDto;
+import com.volgait.simbirGo.Account.DTO.AccountInfoDto;
+import com.volgait.simbirGo.Account.DTO.AccountSignInUpDto;
+import com.volgait.simbirGo.Account.DTO.AccountUpdateDto;
 import com.volgait.simbirGo.Account.model.Account;
 import com.volgait.simbirGo.Account.service.AccountExistsException;
 import com.volgait.simbirGo.Account.service.AccountService;
 import com.volgait.simbirGo.Configuration.OpenAPI30Configuration;
 import com.volgait.simbirGo.Util.ValidationException;
+import org.springframework.data.util.Pair;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,23 +21,27 @@ public class AccountController {
     }
 
     @GetMapping("/Me")
-    public AccountDto getCurrentAccount() {
-        Account currentAccount = accountService.findCurrentAccount();
-        if (currentAccount != null) {
-            return new AccountDto(currentAccount);
+    public AccountInfoDto getCurrentAccount() {
+        try {
+            Account currentAccount = accountService.findCurrentAccount();
+            if (currentAccount != null) {
+                return new AccountInfoDto(currentAccount);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
         }
-        return null;
     }
 
     @PostMapping("/SignIn")
-    public String login(String username, String password) {
-        return accountService.signIn(username, password);
+    public String login(@RequestBody AccountSignInUpDto authDto) {
+        return accountService.signIn(authDto.getUsername(), authDto.getPassword());
     }
 
     @PostMapping("/SignUp")
-    public String registry(String username, String password) {
+    public String registry(@RequestBody AccountSignInUpDto authDto) {
         try {
-            Account account = accountService.createAccount(username, password);
+            Account account = accountService.createAccount(authDto.getUsername(), authDto.getPassword());
             return account.getUsername() + " was created";
         } catch (ValidationException | AccountExistsException e) {
             return e.getMessage();
@@ -42,10 +49,10 @@ public class AccountController {
     }
 
     @PutMapping("/Update")
-    public String update(String username, String password) {
+    public String update(@RequestBody AccountUpdateDto updateInfo) {
         try {
-            Account account = accountService.updateAccount(username, password);
-            return account.getUsername() + " was updated";
+            Pair<Account, String> info = accountService.updateAccount(updateInfo.getUsername(), updateInfo.getPassword());
+            return info.getFirst().getUsername() + " was updated.\nNew token - " + info.getSecond();
         } catch (ValidationException | AccountExistsException e) {
             return e.getMessage();
         }

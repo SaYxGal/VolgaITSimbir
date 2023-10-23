@@ -6,8 +6,8 @@ import com.volgait.simbirGo.Account.repository.AccountRepository;
 import com.volgait.simbirGo.Configuration.jwt.JwtException;
 import com.volgait.simbirGo.Configuration.jwt.JwtProvider;
 import com.volgait.simbirGo.Util.ValidatorUtil;
+import org.springframework.data.util.Pair;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,7 +28,7 @@ public class AccountService implements UserDetailsService {
     private final ValidatorUtil validatorUtil;
     private final JwtProvider jwtProvider;
 
-    public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder, ValidatorUtil validatorUtil, JwtProvider jwtProvider, AuthenticationManager authenticationManager) {
+    public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder, ValidatorUtil validatorUtil, JwtProvider jwtProvider) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.validatorUtil = validatorUtil;
@@ -50,7 +50,7 @@ public class AccountService implements UserDetailsService {
         return accountRepository.save(account);
     }
 
-    public Account updateAccount(String username, String password) {
+    public Pair<Account, String> updateAccount(String username, String password) {
         Account currentAccount = findCurrentAccount();
         if (currentAccount != null) {
             return updateAccount(currentAccount.getId(), username,
@@ -60,17 +60,18 @@ public class AccountService implements UserDetailsService {
     }
 
     @Transactional
-    public Account updateAccount(Long id, String username, String password, boolean isAdmin, double balance) {
+    public Pair<Account, String> updateAccount(Long id, String username, String password, boolean isAdmin, double balance) {
         if (findByUsername(username) != null) {
             throw new AccountExistsException(username);
         }
-        Account currentAccount = findAccount(id);
+        final Account currentAccount = findAccount(id);
         currentAccount.setUsername(username);
         currentAccount.setPassword(passwordEncoder.encode(password));
         currentAccount.setAdmin(isAdmin);
         currentAccount.setBalance(balance);
         validatorUtil.validate(currentAccount);
-        return accountRepository.save(currentAccount);
+        String token = jwtProvider.generateToken(currentAccount.getUsername());
+        return Pair.of(accountRepository.save(currentAccount), token);
     }
 
     @Transactional
@@ -86,9 +87,9 @@ public class AccountService implements UserDetailsService {
         return account.orElseThrow(() -> new AccountNotFoundException(id));
     }
 
-    @Transactional(readOnly = true) //To do
+    @Transactional(readOnly = true)
     public List<Account> findAccountsInRange(int start, int count) {
-        return accountRepository.findAll();
+        return accountRepository.getAccountsInRange(start - 1, count);
     }
 
     @Transactional(readOnly = true)
