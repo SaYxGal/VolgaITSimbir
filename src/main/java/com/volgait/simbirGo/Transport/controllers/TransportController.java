@@ -3,6 +3,7 @@ package com.volgait.simbirGo.Transport.controllers;
 import com.volgait.simbirGo.Account.model.Account;
 import com.volgait.simbirGo.Account.service.AccountService;
 import com.volgait.simbirGo.Configuration.OpenAPI30Configuration;
+import com.volgait.simbirGo.Transport.DTO.TransportCreateDto;
 import com.volgait.simbirGo.Transport.DTO.TransportDto;
 import com.volgait.simbirGo.Transport.DTO.TransportUpdateDto;
 import com.volgait.simbirGo.Transport.model.Transport;
@@ -34,7 +35,7 @@ public class TransportController {
     }
 
     @PostMapping("")
-    public String makeTransport(@RequestBody TransportDto transportDto) {
+    public String makeTransport(@RequestBody TransportCreateDto transportDto) {
         try {
             Transport transport = transportService.createTransport(transportDto.isCanBeRented(),
                     transportDto.getTransportType(), transportDto.getModel(), transportDto.getColor(),
@@ -49,7 +50,12 @@ public class TransportController {
     @PutMapping("/{id}")
     public String changeTransport(@PathVariable Long id, @RequestBody TransportUpdateDto updateDto) {
         try {
-            Transport transport = transportService.updateTransport(id, updateDto.isCanBeRented(),
+            Transport transport = transportService.findTransport(id);
+            Account currentAccount = accountService.findCurrentAccount();
+            if (!Objects.equals(transport.getAccount().getId(), currentAccount.getId())) {
+                return "This transport has different owner";
+            }
+            transportService.updateTransport(id, updateDto.isCanBeRented(),
                     updateDto.getModel(), updateDto.getColor(), updateDto.getIdentifier(), updateDto.getDescription(),
                     updateDto.getLatitude(), updateDto.getLongitude(), updateDto.getMinutePrice(), updateDto.getDayPrice());
             return "Transport with id= " + transport.getId() + " was updated.";

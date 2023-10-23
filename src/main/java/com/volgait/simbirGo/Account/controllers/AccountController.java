@@ -5,6 +5,7 @@ import com.volgait.simbirGo.Account.DTO.AccountSignInUpDto;
 import com.volgait.simbirGo.Account.DTO.AccountUpdateDto;
 import com.volgait.simbirGo.Account.model.Account;
 import com.volgait.simbirGo.Account.service.AccountExistsException;
+import com.volgait.simbirGo.Account.service.AccountNotFoundException;
 import com.volgait.simbirGo.Account.service.AccountService;
 import com.volgait.simbirGo.Configuration.OpenAPI30Configuration;
 import com.volgait.simbirGo.Util.ValidationException;
@@ -35,7 +36,11 @@ public class AccountController {
 
     @PostMapping("/SignIn")
     public String login(@RequestBody AccountSignInUpDto authDto) {
-        return accountService.signIn(authDto.getUsername(), authDto.getPassword());
+        try {
+            return accountService.signIn(authDto.getUsername(), authDto.getPassword());
+        } catch (ValidationException | AccountNotFoundException e) {
+            return e.getMessage();
+        }
     }
 
     @PostMapping("/SignUp")
@@ -52,6 +57,9 @@ public class AccountController {
     public String update(@RequestBody AccountUpdateDto updateInfo) {
         try {
             Pair<Account, String> info = accountService.updateAccount(updateInfo.getUsername(), updateInfo.getPassword());
+            if (info.getSecond().equals("")) {
+                return info.getFirst().getUsername() + " was updated.";
+            }
             return info.getFirst().getUsername() + " was updated.\nNew token - " + info.getSecond();
         } catch (ValidationException | AccountExistsException e) {
             return e.getMessage();

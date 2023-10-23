@@ -4,11 +4,14 @@ import com.volgait.simbirGo.Account.model.Account;
 import com.volgait.simbirGo.Account.service.AccountNotFoundException;
 import com.volgait.simbirGo.Account.service.AccountService;
 import com.volgait.simbirGo.Transport.model.Transport;
+import com.volgait.simbirGo.Transport.model.TransportType;
 import com.volgait.simbirGo.Transport.repository.TransportRepository;
 import com.volgait.simbirGo.Util.ValidatorUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -27,6 +30,26 @@ public class TransportService {
     public Transport findTransport(Long id) {
         final Optional<Transport> transport = transportRepository.findById(id);
         return transport.orElseThrow(() -> new TransportNotFoundException(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Transport> findTransportsInRange(int start, int count, String transportType) {
+        boolean flag = false;
+        for (int i = 0; i < TransportType.values().length; ++i) {
+            if (Objects.equals(TransportType.values()[i].toString(), transportType)) {
+                flag = true;
+                break;
+            }
+        }
+        if (!flag && !Objects.equals(transportType, "All")) {
+            throw new RuntimeException("Некорректный тип транспорта");
+        }
+        if (Objects.equals(transportType, "All")) {
+            return transportRepository.getTransportsInRange(start - 1, count);
+        } else {
+            return transportRepository.getTransportsInRangeFiltered(start - 1, count, transportType);
+        }
+
     }
 
     @Transactional
@@ -106,8 +129,9 @@ public class TransportService {
     }
 
     @Transactional
-    public void deleteTransport(Long id) {
+    public Transport deleteTransport(Long id) {
         final Transport currentTransport = findTransport(id);
         transportRepository.delete(currentTransport);
+        return currentTransport;
     }
 }

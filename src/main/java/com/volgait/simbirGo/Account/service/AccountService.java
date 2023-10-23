@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -61,30 +62,21 @@ public class AccountService implements UserDetailsService {
 
     @Transactional
     public Pair<Account, String> updateAccount(Long id, String username, String password, boolean isAdmin, double balance) {
-        if (findByUsername(username) != null) {
+        final Account currentAccount = findAccount(id);
+        if (findByUsername(username) != null && !Objects.equals(currentAccount.getUsername(), username)) {
             throw new AccountExistsException(username);
         }
-        final Account currentAccount = findAccount(id);
+        String token = "";
+        if (!Objects.equals(currentAccount.getUsername(), username)) {
+            token = jwtProvider.generateToken(username);
+        }
         currentAccount.setUsername(username);
         currentAccount.setPassword(passwordEncoder.encode(password));
         currentAccount.setAdmin(isAdmin);
         currentAccount.setBalance(balance);
         validatorUtil.validate(currentAccount);
         return Pair.of(accountRepository.save(currentAccount),
-                jwtProvider.generateToken(currentAccount.getUsername()));
-    }
-
-    public Account updateBalance(Account account, double count, char operation) {
-        switch (operation) {
-            case '+':
-                account.setBalance(account.getBalance() + count);
-                break;
-            case '-':
-                account.setBalance(account.getBalance() - count);
-                break;
-        }
-        validatorUtil.validate(account);
-        return accountRepository.save(account);
+                token);
     }
 
     @Transactional
@@ -125,7 +117,7 @@ public class AccountService implements UserDetailsService {
             throw new AccountNotFoundException(username);
         }
         if (!passwordEncoder.matches(password, account.getPassword())) {
-            throw new AccountNotFoundException(password);
+            throw new AccountNotFoundException(account.getUsername(), password);
         }
         return jwtProvider.generateToken(account.getUsername());
     }

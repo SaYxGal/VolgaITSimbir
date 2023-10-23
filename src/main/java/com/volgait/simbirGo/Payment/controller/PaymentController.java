@@ -26,7 +26,8 @@ public class PaymentController {
         if (!currentAccount.isAdmin() && !Objects.equals(account.getId(), currentAccount.getId())) {
             return "Your account don't have permission to do this action";
         }
-        account = accountService.updateBalance(account, 250000, '+');
+        accountService.updateAccount(account.getId(), account.getUsername(), account.getPassword(),
+                account.isAdmin(), account.getBalance() + 250000);
         return "Balance of " + account.getUsername() + " was increased by 250000";
     }
 }
