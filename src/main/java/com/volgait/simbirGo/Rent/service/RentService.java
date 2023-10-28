@@ -144,13 +144,15 @@ public class RentService {
         try {
             Account account = accountService.findAccount(userId);
             Transport transport = transportService.findTransport(transportId);
-            if (!transport.isCanBeRented()) {
+            if (!transport.isCanBeRented() && !Objects.equals(transportId, rent.getTransport().getId())) {
                 return null;
             }
             transportService.updateTransportStatus(rent.getTransport().getId(), true);
             rent.setAccount(account);
             rent.setTransport(transport);
-            transportService.updateTransportStatus(transport.getId(), false);
+            if (timeEnd == null) {
+                transportService.updateTransportStatus(transport.getId(), false);
+            }
         } catch (AccountNotFoundException | TransportNotFoundException e) {
             return null;
         }
@@ -172,7 +174,7 @@ public class RentService {
     }
 
     @Transactional
-    public Rent endRent(Long rentId) {
+    public Rent endRent(Long rentId, double latitude, double longitude) {
         try {
             Rent rent = findRent(rentId);
             Account currentAccount = accountService.findCurrentAccount();
@@ -195,6 +197,7 @@ public class RentService {
                     currentAccount.getPassword(), currentAccount.isAdmin(),
                     currentAccount.getBalance() - finalPrice);
             rent.setTimeEnd(timeEnd);
+            transportService.updateTransportPosition(rent.getTransport().getId(), latitude, longitude);
             transportService.updateTransportStatus(rent.getTransport().getId(), true);
             validatorUtil.validate(rent);
             return rentRepository.save(rent);

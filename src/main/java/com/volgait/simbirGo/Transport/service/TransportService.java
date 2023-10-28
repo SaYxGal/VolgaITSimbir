@@ -162,6 +162,15 @@ public class TransportService {
     }
 
     @Transactional
+    public Transport updateTransportPosition(Long id, double latitude, double longitude) {
+        final Transport transport = findTransport(id);
+        transport.setLatitude(latitude);
+        transport.setLongitude(longitude);
+        validatorUtil.validate(transport);
+        return transportRepository.save(transport);
+    }
+
+    @Transactional
     public Transport deleteTransport(Long id) {
         final Transport currentTransport = findTransport(id);
         transportRepository.delete(currentTransport);

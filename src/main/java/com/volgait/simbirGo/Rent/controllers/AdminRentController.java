@@ -62,8 +62,8 @@ public class AdminRentController {
 
     @PostMapping("/End/{rentId}")
     @Secured(AccountRole.AsString.ADMIN)
-    public String endRent(@PathVariable Long rentId) {
-        Rent rent = rentService.endRent(rentId);
+    public String endRent(@PathVariable Long rentId, double latitude, double longitude) {
+        Rent rent = rentService.endRent(rentId, latitude, longitude);
         if (rent == null) {
             return "Incorrect data";
         }
