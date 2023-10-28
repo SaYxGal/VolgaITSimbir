@@ -181,13 +181,19 @@ public class RentService {
                 return null;
             }
             ZonedDateTime timeEnd = ZonedDateTime.now();
+            double finalPrice;
             if (Objects.equals(rent.getPriceType(), "Days")) {
                 long days = ChronoUnit.DAYS.between(rent.getTimeStart(), timeEnd);
-                rent.setFinalPrice(rent.getPriceOfUnit() * days);
+                finalPrice = rent.getPriceOfUnit() * days;
+                rent.setFinalPrice(finalPrice);
             } else {
                 long minutes = ChronoUnit.MINUTES.between(rent.getTimeStart(), timeEnd);
-                rent.setFinalPrice(rent.getPriceOfUnit() * minutes);
+                finalPrice = rent.getPriceOfUnit() * minutes;
+                rent.setFinalPrice(finalPrice);
             }
+            accountService.updateAccount(currentAccount.getId(), currentAccount.getUsername(),
+                    currentAccount.getPassword(), currentAccount.isAdmin(),
+                    currentAccount.getBalance() - finalPrice);
             rent.setTimeEnd(timeEnd);
             transportService.updateTransportStatus(rent.getTransport().getId(), true);
             validatorUtil.validate(rent);
