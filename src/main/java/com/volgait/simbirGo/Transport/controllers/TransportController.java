@@ -41,6 +41,9 @@ public class TransportController {
                     transportDto.getTransportType(), transportDto.getModel(), transportDto.getColor(),
                     transportDto.getIdentifier(), transportDto.getDescription(), transportDto.getLatitude(),
                     transportDto.getLongitude(), transportDto.getMinutePrice(), transportDto.getDayPrice());
+            if (transport == null) {
+                return "Incorrect data";
+            }
             return "Transport with id= " + transport.getId() + " was created";
         } catch (ValidationException e) {
             return e.getMessage();

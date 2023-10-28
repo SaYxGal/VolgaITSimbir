@@ -10,6 +10,9 @@ public interface TransportRepository extends JpaRepository<Transport, Long> {
     @Query(value = "SELECT * FROM transports WHERE transport_type = ?3 LIMIT ?2 OFFSET ?1", nativeQuery = true)
     List<Transport> getTransportsInRangeFiltered(int start, int count, String transportType);
 
+    @Query(value = "SELECT * FROM transports WHERE transport_type = ?1", nativeQuery = true)
+    List<Transport> getTransportsFiltered(String transportType);
+
     @Query(value = "SELECT * FROM transports LIMIT ?2 OFFSET ?1", nativeQuery = true)
     List<Transport> getTransportsInRange(int start, int count);
 }

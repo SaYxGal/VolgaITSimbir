@@ -26,6 +26,17 @@ public class TransportService {
         this.validatorUtil = validatorUtil;
     }
 
+    private boolean checkValidType(String type) {
+        boolean flag = false;
+        for (int i = 0; i < TransportType.values().length; ++i) {
+            if (Objects.equals(type, TransportType.values()[i].toString())) {
+                flag = true;
+                break;
+            }
+        }
+        return flag;
+    }
+
     @Transactional(readOnly = true)
     public Transport findTransport(Long id) {
         final Optional<Transport> transport = transportRepository.findById(id);
@@ -33,15 +44,20 @@ public class TransportService {
     }
 
     @Transactional(readOnly = true)
-    public List<Transport> findTransportsInRange(int start, int count, String transportType) {
-        boolean flag = false;
-        for (int i = 0; i < TransportType.values().length; ++i) {
-            if (Objects.equals(TransportType.values()[i].toString(), transportType)) {
-                flag = true;
-                break;
-            }
+    public List<Transport> findAllByType(String transportType) {
+        if (!checkValidType(transportType) && !Objects.equals(transportType, "All")) {
+            return null;
         }
-        if (!flag && !Objects.equals(transportType, "All")) {
+        if (Objects.equals(transportType, "All")) {
+            return transportRepository.findAll();
+        } else {
+            return transportRepository.getTransportsFiltered(transportType);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<Transport> findTransportsInRange(int start, int count, String transportType) {
+        if (!checkValidType(transportType) && !Objects.equals(transportType, "All")) {
             throw new RuntimeException("Некорректный тип транспорта");
         }
         if (Objects.equals(transportType, "All")) {
@@ -58,6 +74,9 @@ public class TransportService {
                                      String identifier, String description,
                                      double latitude, double longitude,
                                      double minutePrice, double dayPrice) {
+        if (!checkValidType(transportType)) {
+            return null;
+        }
         Account currentAccount = accountService.findCurrentAccount();
         if (currentAccount != null) {
             return createTransport(canBeRented, transportType,
@@ -73,6 +92,9 @@ public class TransportService {
                                      String identifier, String description,
                                      double latitude, double longitude,
                                      double minutePrice, double dayPrice, Long ownerId) {
+        if (!checkValidType(transportType)) {
+            return null;
+        }
         final Transport transport = new Transport(canBeRented, transportType, model, color, identifier,
                 description, latitude, longitude, minutePrice, dayPrice);
         try {
@@ -107,6 +129,9 @@ public class TransportService {
                                      String identifier, String description,
                                      double latitude, double longitude,
                                      double minutePrice, double dayPrice, Long ownerId) {
+        if (!checkValidType(transportType)) {
+            return null;
+        }
         final Transport transport = findTransport(id);
         try {
             Account account = accountService.findAccount(ownerId);
@@ -124,6 +149,14 @@ public class TransportService {
         transport.setLongitude(longitude);
         transport.setMinutePrice(minutePrice);
         transport.setDayPrice(dayPrice);
+        validatorUtil.validate(transport);
+        return transportRepository.save(transport);
+    }
+
+    @Transactional
+    public Transport updateTransportStatus(Long id, boolean canBeRented) {
+        final Transport transport = findTransport(id);
+        transport.setCanBeRented(canBeRented);
         validatorUtil.validate(transport);
         return transportRepository.save(transport);
     }
